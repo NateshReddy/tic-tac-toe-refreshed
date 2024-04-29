@@ -1,3 +1,4 @@
+import asyncio
 import pygame
 import math
 
@@ -55,8 +56,8 @@ def initialize_grid():
     return game_array
 
 
-def click(game_array):
-    global x_turn, o_turn, images
+def click():
+    global x_turn, o_turn, images, x_queue, o_queue, game_array
 
     # Mouse position
     m_x, m_y = pygame.mouse.get_pos()
@@ -75,17 +76,29 @@ def click(game_array):
                     x_turn = False
                     o_turn = True
                     game_array[i][j] = (x, y, 'x', False)
+                    x_queue.append((x, y, i, j))
+                    if len(x_queue) > 3:
+                        x1, y1, i1, j1 = x_queue.pop(0)
+                        game_array[i1][j1] = (x1, y1, "", True)
+                        images.pop(0)
 
                 elif o_turn:  # If it's O's turn
                     images.append((x, y, O_IMAGE))
                     x_turn = True
                     o_turn = False
                     game_array[i][j] = (x, y, 'o', False)
+                    o_queue.append((x, y, i, j))
+                    if len(o_queue) > 3:
+                        x1, y1, i1, j1 = o_queue.pop(0)
+                        game_array[i1][j1] = (x1, y1, "", True)
+                        images.pop(0)
 
 
 # Checking if someone has won
-def has_won(game_array):
+def has_won():
+    global game_array
     # Checking rows
+    # print(game_array)
     for row in range(len(game_array)):
         if (game_array[row][0][2] == game_array[row][1][2] == game_array[row][2][2]) and game_array[row][0][2] != "":
             display_message(game_array[row][0][2].upper() + " has won!")
@@ -110,7 +123,8 @@ def has_won(game_array):
     return False
 
 
-def has_drawn(game_array):
+def has_drawn():
+    global game_array
     for i in range(len(game_array)):
         for j in range(len(game_array[i])):
             if game_array[i][j][2] == "":
@@ -141,8 +155,9 @@ def render():
     pygame.display.update()
 
 
-def main():
-    global x_turn, o_turn, images, draw
+async def main():
+# def main():
+    global x_turn, o_turn, images, draw, x_queue, o_queue, game_array
 
     images = []
     draw = False
@@ -152,6 +167,8 @@ def main():
     x_turn = True
     o_turn = False
 
+    x_queue = []
+    o_queue = []
     game_array = initialize_grid()
 
     while run:
@@ -159,14 +176,20 @@ def main():
             if event.type == pygame.QUIT:
                 pygame.quit()
             if event.type == pygame.MOUSEBUTTONDOWN:
-                click(game_array)
+                click()
 
         render()
 
-        if has_won(game_array) or has_drawn(game_array):
+        if has_won() or has_drawn():
             run = False
+        await asyncio.sleep(0)
+    
+    
+    
 
 
-while True:
-    if __name__ == '__main__':
-        main()
+
+# if __name__ == '__main__':
+#     main()
+
+asyncio.run(main())
